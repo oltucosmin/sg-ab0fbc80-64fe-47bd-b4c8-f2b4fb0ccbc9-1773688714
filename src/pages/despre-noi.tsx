@@ -5,14 +5,44 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Check, Target, Eye, Hammer, Lightbulb, Package, Cog } from "lucide-react";
 import Link from "next/link";
+import Head from "next/head";
 
 export default function DespreNoi() {
+  const jsonLdBreadcrumb = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Acasă",
+        "item": "https://oikosenergy.ro"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Despre Noi",
+        "item": "https://oikosenergy.ro/despre-noi"
+      }
+    ]
+  };
+
   return (
     <>
       <SEO
-        title="Despre Noi - Oikos Energy | Inovație în Energie Solară"
-        description="Companie privată înființată în 2014, specializată în construcția parcurilor fotovoltaice cu tehnologie avansată și practici sustenabile."
+        title="Despre Noi - Oikos Energy | Companie Energie Solară din 2014 | Peste 500 Instalații"
+        description="Oikos Energy - Companie privată înființată în 2014, specializată în construcția parcurilor fotovoltaice. Peste 500 de instalații realizate cu echipamente premium și tehnologie avansată."
+        url="https://oikosenergy.ro/despre-noi"
+        keywords="Oikos Energy, companie panouri fotovoltaice, parcuri solare Romania, echipamente fotovoltaice, experienta instalare panouri, firma energie verde"
+        type="article"
       />
+
+      <Head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdBreadcrumb) }}
+        />
+      </Head>
       
       <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
         <Navigation />
