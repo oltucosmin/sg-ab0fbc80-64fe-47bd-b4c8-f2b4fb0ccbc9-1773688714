@@ -8,6 +8,7 @@ export function Navigation() {
 
   const navItems = [
     { href: "/", label: "Acasă" },
+    { href: "/despre-noi", label: "Despre Noi" },
     { href: "/proiecte", label: "Proiecte" },
     { href: "/servicii", label: "Servicii" },
     { href: "/contact", label: "Contact" },
