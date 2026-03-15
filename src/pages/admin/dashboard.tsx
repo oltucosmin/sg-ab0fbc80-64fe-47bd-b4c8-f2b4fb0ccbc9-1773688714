@@ -47,7 +47,10 @@ export default function AdminDashboard() {
       setProjects(data);
     } catch (error) {
       console.error("Error loading projects:", error);
-      alert("Eroare la încărcarea proiectelor. Verifică conexiunea la Supabase.");
+      
+      // Don't logout on error, just show message
+      const errorMessage = error instanceof Error ? error.message : "Eroare necunoscută";
+      alert(`Eroare la încărcarea proiectelor: ${errorMessage}\n\nVerifică:\n1. Dacă ai rulat SQL-ul în Supabase\n2. Dacă tabelul 'projects' există\n3. Conexiunea la internet`);
     } finally {
       setLoading(false);
     }
