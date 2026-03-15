@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Mail, Phone, MapPin, Send, CheckCircle } from "lucide-react";
+import Link from "next/link";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -203,9 +204,9 @@ export default function ContactPage() {
                   />
                   <Label htmlFor="gdpr" className="text-sm text-muted-foreground cursor-pointer leading-relaxed">
                     Sunt de acord cu prelucrarea datelor personale conform{" "}
-                    <a href="/politica-confidentialitate" className="text-emerald-400 hover:underline">
+                    <Link href="/politica-confidentialitate" className="text-emerald-400 hover:underline">
                       Politicii de Confidențialitate
-                    </a>
+                    </Link>
                     . *
                   </Label>
                 </div>

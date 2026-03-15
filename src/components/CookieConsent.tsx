@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
+import Link from "next/link";
 
 export function CookieConsent() {
   const [showConsent, setShowConsent] = useState(false);
@@ -37,9 +38,9 @@ export function CookieConsent() {
                 Folosim cookie-uri pentru a îmbunătăți experiența ta pe site-ul nostru, 
                 pentru a analiza traficul și pentru a personaliza conținutul. Prin continuarea 
                 navigării, ești de acord cu{" "}
-                <a href="/politica-confidentialitate" className="text-emerald-400 hover:underline">
+                <Link href="/politica-confidentialitate" className="text-emerald-400 hover:underline">
                   Politica de Confidențialitate
-                </a>
+                </Link>
                 {" "}a noastră.
               </p>
               <div className="flex flex-wrap gap-3">
