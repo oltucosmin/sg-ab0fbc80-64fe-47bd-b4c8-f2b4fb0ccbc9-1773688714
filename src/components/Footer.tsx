@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Mail, Phone, MapPin, Facebook, Linkedin } from "lucide-react";
+import { OikosLogo } from "@/components/OikosLogo";
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -10,10 +11,11 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company Info */}
           <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-lime-400 flex items-center justify-center glow-emerald">
-                <span className="text-xl font-bold text-slate-900">O</span>
-              </div>
+            <div className="flex items-center space-x-3">
+              <OikosLogo 
+                size="md" 
+                className="drop-shadow-[0_0_12px_rgba(16,185,129,0.3)]" 
+              />
               <span className="text-lg font-heading font-bold text-gradient">
                 Oikos Energy
               </span>

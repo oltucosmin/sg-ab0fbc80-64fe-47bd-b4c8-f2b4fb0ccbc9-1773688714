@@ -2,6 +2,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { OikosLogo } from "@/components/OikosLogo";
 
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
@@ -19,10 +20,11 @@ export function Navigation() {
       <div className="container mx-auto px-4 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2 group">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-lime-400 flex items-center justify-center glow-emerald transition-all duration-300 group-hover:scale-110">
-              <span className="text-xl font-bold text-slate-900">O</span>
-            </div>
+          <Link href="/" className="flex items-center space-x-3 group">
+            <OikosLogo 
+              size="md" 
+              className="transition-transform duration-300 group-hover:scale-110 drop-shadow-[0_0_12px_rgba(16,185,129,0.4)]" 
+            />
             <span className="text-xl font-heading font-bold text-gradient hidden sm:block">
               Oikos Energy
             </span>
