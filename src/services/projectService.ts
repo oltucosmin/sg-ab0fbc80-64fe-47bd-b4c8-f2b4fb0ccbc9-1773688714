@@ -3,16 +3,21 @@ import type { Project } from '@/types/project';
 
 export const projectService = {
   async getAllProjects(): Promise<Project[]> {
+    console.log('🔍 Fetching projects from Supabase...');
+    console.log('📡 Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
+    
     const { data, error } = await supabase
       .from('projects')
       .select('*')
       .order('completed_date', { ascending: false });
 
     if (error) {
-      console.error('Error fetching projects:', error);
-      throw error;
+      console.error('❌ Supabase error:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      throw new Error(`Supabase error: ${error.message} (Code: ${error.code})`);
     }
 
+    console.log('✅ Projects fetched:', data?.length || 0);
     return (data || []).map((project: any) => ({
       id: project.id,
       title: project.title,
