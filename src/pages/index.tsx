@@ -1,12 +1,27 @@
-import React from 'react'
+import { Navigation } from "@/components/Navigation";
+import { Footer } from "@/components/Footer";
+import { CookieConsent } from "@/components/CookieConsent";
+import { HeroSection } from "@/components/HeroSection";
+import { AboutSection } from "@/components/AboutSection";
+import { ServicesSection } from "@/components/ServicesSection";
+import { SEO } from "@/components/SEO";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-background flex items-center justify-center">
-      <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold text-foreground">Hello World</h1>
-        <p className="text-lg text-muted-foreground">This is going to be your softgen app, start by describing your project.</p>
-      </div>
-    </main>
-  )
+    <>
+      <SEO 
+        title="Oikos Energy - Energie Verde pentru Viitorul Tău"
+        description="Soluții profesionale în energie regenerabilă: panouri fotovoltaice, pompe de căldură, consultanță energetică. Peste 500 de instalații realizate în România."
+        url="https://oikosenergy.ro"
+      />
+      <Navigation />
+      <main className="min-h-screen">
+        <HeroSection />
+        <AboutSection />
+        <ServicesSection />
+      </main>
+      <Footer />
+      <CookieConsent />
+    </>
+  );
 }
