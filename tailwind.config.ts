@@ -43,8 +43,6 @@ const config: Config = {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
-        emerald: "hsl(var(--emerald))",
-        "cyber-lime": "hsl(var(--cyber-lime))",
       },
       borderRadius: {
         lg: "var(--radius)",
