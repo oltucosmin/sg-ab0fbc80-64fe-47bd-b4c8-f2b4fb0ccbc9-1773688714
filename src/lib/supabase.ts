@@ -1,17 +1,21 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
 
-// Read from environment variables (NEXT_PUBLIC_ prefix makes them available in browser)
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// Environment variables for Supabase connection
+// These should be set in Vercel/Netlify dashboard or .env.local for local development
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-// Debug logging to verify environment variables are loaded
-if (typeof window === 'undefined') {
-  // Server-side logging only
-  console.log('🔧 Supabase Configuration (Server):');
-  console.log('URL:', supabaseUrl);
-  console.log('Key exists:', !!supabaseAnonKey);
-  console.log('Key length:', supabaseAnonKey?.length);
+// Validation to ensure environment variables are set
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.warn('⚠️ Supabase environment variables are not set. Database features will not work.');
+  console.warn('Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your environment.');
 }
 
+// Create and export Supabase client
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+
+// Helper function to check if Supabase is properly configured
+export const isSupabaseConfigured = (): boolean => {
+  return Boolean(supabaseUrl && supabaseAnonKey);
+};
