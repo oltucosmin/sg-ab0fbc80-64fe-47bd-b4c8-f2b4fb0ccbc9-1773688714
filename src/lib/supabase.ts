@@ -1,17 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
 
-// Hardcoded credentials for Oikos Energy Supabase project
-const supabaseUrl = 'https://deuuhyvjbxamxeabmhql.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRldXVoeXZqYnhhbXhlYWJtaHFsIiwicm9sZSI6ImFub24iLC5Saj7g9wDtGEWQ_uo4gZMe23MzMAVKVJc8PDmtn2owusU';
+// Read from environment variables (NEXT_PUBLIC_ prefix makes them available in browser)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-console.log('🔑 Supabase Configuration:');
-console.log('URL:', supabaseUrl);
-console.log('Key (first 20 chars):', supabaseAnonKey.substring(0, 20) + '...');
-console.log('Key length:', supabaseAnonKey.length);
-console.log('Key exists:', !!supabaseAnonKey);
-console.log('URL exists:', !!supabaseUrl);
+// Debug logging to verify environment variables are loaded
+if (typeof window === 'undefined') {
+  // Server-side logging only
+  console.log('🔧 Supabase Configuration (Server):');
+  console.log('URL:', supabaseUrl);
+  console.log('Key exists:', !!supabaseAnonKey);
+  console.log('Key length:', supabaseAnonKey?.length);
+}
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
-
-console.log('✅ Supabase client created successfully');
