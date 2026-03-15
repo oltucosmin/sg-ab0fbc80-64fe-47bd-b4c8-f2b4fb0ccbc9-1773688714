@@ -13,7 +13,7 @@ export const projectService = {
       throw error;
     }
 
-    return data.map(project => ({
+    return (data || []).map((project: any) => ({
       id: project.id,
       title: project.title,
       description: project.description,
@@ -33,12 +33,10 @@ export const projectService = {
       .eq('id', id)
       .single();
 
-    if (error) {
+    if (error || !data) {
       console.error('Error fetching project:', error);
       return null;
     }
-
-    if (!data) return null;
 
     return {
       id: data.id,
@@ -69,7 +67,7 @@ export const projectService = {
       .select()
       .single();
 
-    if (error) {
+    if (error || !data) {
       console.error('Error creating project:', error);
       throw error;
     }
@@ -108,7 +106,7 @@ export const projectService = {
       .select()
       .single();
 
-    if (error) {
+    if (error || !data) {
       console.error('Error updating project:', error);
       throw error;
     }

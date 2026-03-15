@@ -3,7 +3,7 @@ export interface Project {
   title: string;
   description: string;
   location: string;
-  image: string;
+  imageUrl: string;
   category: "solar" | "heat-pump" | "hybrid";
   power?: string;
   completedDate: string;

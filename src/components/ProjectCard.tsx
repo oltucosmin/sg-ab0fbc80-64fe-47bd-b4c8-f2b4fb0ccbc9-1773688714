@@ -17,7 +17,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
     <div className="glass-card rounded-2xl overflow-hidden group hover:scale-[1.02] transition-all duration-300 animate-fade-in">
       <div className="relative h-64 overflow-hidden">
         <Image
-          src={project.image}
+          src={project.imageUrl}
           alt={project.title}
           fill
           className="object-cover group-hover:scale-110 transition-transform duration-500"
