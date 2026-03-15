@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Mail, Phone, MapPin, Send, CheckCircle } from "lucide-react";
+import { Mail, Phone, MapPin, Send, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { contactService } from "@/services/contactService";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -17,33 +18,48 @@ export default function ContactPage() {
     message: "",
     gdprConsent: false
   });
+  const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
-    await new Promise(resolve => setTimeout(resolve, 1500));
     
-    setSubmitted(true);
-    setLoading(false);
-    setFormData({
-      name: "",
-      email: "",
-      phone: "",
-      message: "",
-      gdprConsent: false
-    });
+    if (!formData.gdprConsent) {
+      alert("Te rog acceptă politica de confidențialitate pentru a trimite mesajul.");
+      return;
+    }
 
-    setTimeout(() => setSubmitted(false), 5000);
+    try {
+      setSubmitting(true);
+      await contactService.submitContact({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        message: formData.message,
+        gdprConsent: formData.gdprConsent
+      });
+      
+      setSubmitted(true);
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        message: "",
+        gdprConsent: false
+      });
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      alert("A apărut o eroare. Te rog încearcă din nou.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <>
       <SEO 
         title="Contact - Oikos Energy"
-        description="Contactează echipa Oikos Energy pentru o consultație gratuită. Solicită o ofertă personalizată pentru panouri fotovoltaice sau pompe de căldură."
+        description="Contactează-ne pentru o consultație gratuită. Echipa Oikos Energy este aici să îți răspundă la toate întrebările despre energia verde."
         url="https://oikosenergy.ro/contact"
       />
       <Navigation />
@@ -213,15 +229,18 @@ export default function ContactPage() {
 
                 <Button
                   type="submit"
-                  disabled={loading || !formData.gdprConsent}
-                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white glow-emerald disabled:opacity-50"
+                  disabled={submitting}
+                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white glow-emerald"
                 >
-                  {loading ? (
-                    "Se trimite..."
+                  {submitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Se trimite...
+                    </>
                   ) : (
                     <>
-                      Trimite Mesajul
-                      <Send className="ml-2 w-4 h-4" />
+                      <Send className="w-4 h-4 mr-2" />
+                      Trimite Mesaj
                     </>
                   )}
                 </Button>

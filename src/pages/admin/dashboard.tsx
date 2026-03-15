@@ -8,21 +8,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, LogOut, Save, X } from "lucide-react";
-import { mockProjects } from "@/lib/mockProjects";
+import { Plus, Pencil, Trash2, LogOut, Save, X, Upload, Loader2 } from "lucide-react";
+import { projectService } from "@/services/projectService";
 import type { Project } from "@/types/project";
 
 export default function AdminDashboard() {
   const { isAuthenticated, logout } = useAuth();
   const router = useRouter();
-  const [projects, setProjects] = useState<Project[]>(mockProjects);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [formData, setFormData] = useState<Partial<Project>>({
     title: "",
     description: "",
     location: "",
-    image: "",
+    imageUrl: "",
     category: "solar",
     power: "",
     completedDate: new Date().toISOString().split("T")[0],
@@ -32,42 +35,100 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (!isAuthenticated) {
       router.push("/admin/login");
+    } else {
+      loadProjects();
     }
   }, [isAuthenticated, router]);
+
+  const loadProjects = async () => {
+    try {
+      setLoading(true);
+      const data = await projectService.getAllProjects();
+      setProjects(data);
+    } catch (error) {
+      console.error("Error loading projects:", error);
+      alert("Eroare la încărcarea proiectelor. Verifică conexiunea la Supabase.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     logout();
     router.push("/admin/login");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingImage(true);
+      const imageUrl = await projectService.uploadImage(file);
+      setFormData({ ...formData, imageUrl });
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      alert("Eroare la încărcarea imaginii. Încearcă din nou.");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (editingId) {
-      setProjects(projects.map(p => 
-        p.id === editingId ? { ...formData as Project, id: editingId } : p
-      ));
-      setEditingId(null);
-    } else {
-      const newProject: Project = {
-        ...formData as Project,
-        id: Date.now().toString()
-      };
-      setProjects([newProject, ...projects]);
+    if (!formData.title || !formData.description || !formData.location || !formData.imageUrl || !formData.completedDate) {
+      alert("Te rog completează toate câmpurile obligatorii.");
+      return;
     }
-    
-    resetForm();
+
+    try {
+      setSubmitting(true);
+      
+      if (editingId) {
+        await projectService.updateProject(editingId, formData);
+      } else {
+        await projectService.createProject(formData as Omit<Project, "id">);
+      }
+      
+      await loadProjects();
+      resetForm();
+      alert(editingId ? "Proiect actualizat cu succes!" : "Proiect adăugat cu succes!");
+    } catch (error) {
+      console.error("Error saving project:", error);
+      alert("Eroare la salvarea proiectului. Încearcă din nou.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleEdit = (project: Project) => {
-    setFormData(project);
+    setFormData({
+      title: project.title,
+      description: project.description,
+      location: project.location,
+      imageUrl: project.imageUrl,
+      category: project.category,
+      power: project.power || "",
+      completedDate: project.completedDate,
+      featured: project.featured || false
+    });
     setEditingId(project.id);
     setShowForm(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm("Sigur vrei să ștergi acest proiect?")) {
-      setProjects(projects.filter(p => p.id !== id));
+  const handleDelete = async (id: string) => {
+    if (!confirm("Sigur vrei să ștergi acest proiect? Acțiunea este permanentă.")) {
+      return;
+    }
+
+    try {
+      await projectService.deleteProject(id);
+      await loadProjects();
+      alert("Proiect șters cu succes!");
+    } catch (error) {
+      console.error("Error deleting project:", error);
+      alert("Eroare la ștergerea proiectului. Încearcă din nou.");
     }
   };
 
@@ -76,7 +137,7 @@ export default function AdminDashboard() {
       title: "",
       description: "",
       location: "",
-      image: "",
+      imageUrl: "",
       category: "solar",
       power: "",
       completedDate: new Date().toISOString().split("T")[0],
@@ -210,16 +271,21 @@ export default function AdminDashboard() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="image">URL Imagine *</Label>
-                    <Input
-                      id="image"
-                      type="url"
-                      value={formData.image}
-                      onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                      placeholder="https://..."
-                      required
-                      className="bg-background/50 border-white/10"
-                    />
+                    <Label htmlFor="image">Imagine Proiect *</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="image"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        disabled={uploadingImage}
+                        className="bg-background/50 border-white/10"
+                      />
+                      {uploadingImage && <Loader2 className="w-5 h-5 animate-spin text-emerald-500" />}
+                    </div>
+                    {formData.imageUrl && (
+                      <p className="text-xs text-emerald-400">✓ Imagine încărcată</p>
+                    )}
                   </div>
                 </div>
 
@@ -251,10 +317,20 @@ export default function AdminDashboard() {
                 <div className="flex gap-3">
                   <Button
                     type="submit"
+                    disabled={submitting || uploadingImage}
                     className="bg-emerald-500 hover:bg-emerald-600 text-white glow-emerald"
                   >
-                    <Save className="w-4 h-4 mr-2" />
-                    {editingId ? "Salvează Modificări" : "Adaugă Proiect"}
+                    {submitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Se salvează...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 mr-2" />
+                        {editingId ? "Salvează Modificări" : "Adaugă Proiect"}
+                      </>
+                    )}
                   </Button>
                   <Button
                     type="button"
@@ -274,54 +350,74 @@ export default function AdminDashboard() {
               Proiecte ({projects.length})
             </h2>
             
-            {projects.map((project, index) => (
-              <div
-                key={project.id}
-                className="glass-card rounded-xl p-6 hover:scale-[1.01] transition-all duration-300 animate-fade-in"
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-heading font-bold text-xl text-foreground">
-                        {project.title}
-                      </h3>
-                      {project.featured && (
-                        <span className="px-2 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-xs font-semibold text-emerald-400">
-                          Premium
-                        </span>
-                      )}
+            {loading ? (
+              <div className="text-center py-20">
+                <Loader2 className="w-8 h-8 animate-spin text-emerald-500 mx-auto mb-4" />
+                <p className="text-muted-foreground">Se încarcă proiectele...</p>
+              </div>
+            ) : projects.length === 0 ? (
+              <div className="text-center py-20 glass-card rounded-2xl">
+                <p className="text-muted-foreground text-lg mb-4">
+                  Nu există proiecte încă.
+                </p>
+                <Button
+                  onClick={() => setShowForm(true)}
+                  className="bg-emerald-500 hover:bg-emerald-600 text-white glow-emerald"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adaugă Primul Proiect
+                </Button>
+              </div>
+            ) : (
+              projects.map((project, index) => (
+                <div
+                  key={project.id}
+                  className="glass-card rounded-xl p-6 hover:scale-[1.01] transition-all duration-300 animate-fade-in"
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="font-heading font-bold text-xl text-foreground">
+                          {project.title}
+                        </h3>
+                        {project.featured && (
+                          <span className="px-2 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-xs font-semibold text-emerald-400">
+                            Premium
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-muted-foreground mb-3">
+                        {project.description}
+                      </p>
+                      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                        <span>📍 {project.location}</span>
+                        {project.power && <span>⚡ {project.power}</span>}
+                        <span>📅 {new Date(project.completedDate).toLocaleDateString("ro-RO", { month: "long", year: "numeric" })}</span>
+                      </div>
                     </div>
-                    <p className="text-muted-foreground mb-3">
-                      {project.description}
-                    </p>
-                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                      <span>📍 {project.location}</span>
-                      {project.power && <span>⚡ {project.power}</span>}
-                      <span>📅 {new Date(project.completedDate).toLocaleDateString("ro-RO", { month: "long", year: "numeric" })}</span>
+                    <div className="flex gap-2 shrink-0">
+                      <Button
+                        onClick={() => handleEdit(project)}
+                        variant="outline"
+                        size="sm"
+                        className="border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        onClick={() => handleDelete(project.id)}
+                        variant="outline"
+                        size="sm"
+                        className="border-destructive/50 text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
-                  </div>
-                  <div className="flex gap-2 shrink-0">
-                    <Button
-                      onClick={() => handleEdit(project)}
-                      variant="outline"
-                      size="sm"
-                      className="border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      onClick={() => handleDelete(project.id)}
-                      variant="outline"
-                      size="sm"
-                      className="border-destructive/50 text-destructive hover:bg-destructive/10"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </main>
