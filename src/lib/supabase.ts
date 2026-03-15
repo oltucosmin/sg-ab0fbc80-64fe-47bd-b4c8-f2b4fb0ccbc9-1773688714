@@ -9,5 +9,9 @@ console.log('🔑 Supabase Configuration:');
 console.log('URL:', supabaseUrl);
 console.log('Key (first 20 chars):', supabaseAnonKey.substring(0, 20) + '...');
 console.log('Key length:', supabaseAnonKey.length);
+console.log('Key exists:', !!supabaseAnonKey);
+console.log('URL exists:', !!supabaseUrl);
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+
+console.log('✅ Supabase client created successfully');
