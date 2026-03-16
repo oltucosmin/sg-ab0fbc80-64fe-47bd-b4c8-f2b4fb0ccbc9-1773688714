@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { SEO } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { userService, type AdminUser, type UserRole } from "@/services/userService";
-import { User, Plus, Key, Trash2, Shield, ShieldCheck, X, Save, ArrowLeft } from "lucide-react";
+import { User, Plus, Key, Trash2, Shield, ShieldCheck, X, Save, ArrowLeft, Crown } from "lucide-react";
 import Link from "next/link";
 
 export default function AdminUsers() {
