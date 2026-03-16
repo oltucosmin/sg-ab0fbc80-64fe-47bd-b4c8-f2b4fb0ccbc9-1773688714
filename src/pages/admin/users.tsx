@@ -1,439 +1,437 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useAuth } from "@/contexts/AuthContext";
-import { Navigation } from "@/components/Navigation";
 import { SEO } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Plus, Trash2, Key, LogOut, ArrowLeft, Loader2, User, Mail, Calendar, Clock, Shield } from "lucide-react";
-import { userService, type AdminUser } from "@/services/userService";
+import { userService, type AdminUser, type UserRole } from "@/services/userService";
+import { User, Plus, Key, Trash2, Shield, ShieldCheck, X, Save, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 export default function AdminUsers() {
-  const { isAuthenticated, logout, userEmail } = useAuth();
   const router = useRouter();
+  const { isAuthenticated, userId, userRole, isSuperAdmin, refreshRole } = useAuth();
+  
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [showResetForm, setShowResetForm] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
-  const [newUserData, setNewUserData] = useState({
-    email: "",
-    password: ""
-  });
-
-  const [resetPasswordData, setResetPasswordData] = useState({
-    userId: "",
-    newPassword: ""
-  });
+  // Add user state
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newRole, setNewRole] = useState<UserRole>("admin");
+  const [addLoading, setAddLoading] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
+  
+  // Reset password state
+  const [resetUserId, setResetUserId] = useState<string | null>(null);
+  const [resetPassword, setResetPassword] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
+  
+  // Change role state
+  const [roleChangeUserId, setRoleChangeUserId] = useState<string | null>(null);
+  const [roleChangeLoading, setRoleChangeLoading] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
       router.push("/admin/login");
-    } else {
-      loadUsers();
+      return;
     }
-  }, [isAuthenticated, router]);
+
+    // Check if user has permission to view users page
+    if (userRole && userRole !== 'super_admin') {
+      router.push("/admin/dashboard");
+      return;
+    }
+
+    loadUsers();
+  }, [isAuthenticated, userRole, router]);
 
   const loadUsers = async () => {
     try {
       setLoading(true);
+      setError(null);
       const data = await userService.getAllUsers();
       setUsers(data);
-    } catch (error) {
-      console.error("Error loading users:", error);
-      alert("Eroare la încărcarea utilizatorilor. Verifică configurația Supabase.");
+    } catch (err) {
+      console.error("Error loading users:", err);
+      setError("Eroare la încărcarea utilizatorilor");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    router.push("/admin/login");
-  };
-
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!newUserData.email || !newUserData.password) {
-      alert("Te rog completează toate câmpurile.");
+    if (!newEmail || !newPassword) {
+      setAddError("Completează toate câmpurile");
       return;
     }
 
-    if (newUserData.password.length < 6) {
-      alert("Parola trebuie să aibă minim 6 caractere.");
+    if (newPassword.length < 6) {
+      setAddError("Parola trebuie să aibă minim 6 caractere");
       return;
     }
 
-    try {
-      setSubmitting(true);
-      const result = await userService.createUser(newUserData.email, newUserData.password);
+    setAddLoading(true);
+    setAddError(null);
+
+    const result = await userService.createUser(newEmail, newPassword, newRole);
+
+    if (result.success) {
+      setNewEmail("");
+      setNewPassword("");
+      setNewRole("admin");
+      setShowAddForm(false);
+      await loadUsers();
+    } else {
+      setAddError(result.error || "Eroare la crearea utilizatorului");
+    }
+
+    setAddLoading(false);
+  };
+
+  const handleResetPassword = async (targetUserId: string) => {
+    if (!resetPassword || resetPassword.length < 6) {
+      setError("Parola trebuie să aibă minim 6 caractere");
+      return;
+    }
+
+    setResetLoading(true);
+    setError(null);
+
+    const result = await userService.resetPassword(targetUserId, resetPassword);
+
+    if (result.success) {
+      setResetUserId(null);
+      setResetPassword("");
+      alert("Parola a fost resetată cu succes!");
+    } else {
+      setError(result.error || "Eroare la resetarea parolei");
+    }
+
+    setResetLoading(false);
+  };
+
+  const handleChangeRole = async (targetUserId: string, newTargetRole: UserRole) => {
+    setRoleChangeLoading(true);
+    setError(null);
+
+    const result = await userService.updateUserRole(targetUserId, newTargetRole);
+
+    if (result.success) {
+      setRoleChangeUserId(null);
+      await loadUsers();
       
-      if (result.success) {
-        await loadUsers();
-        setNewUserData({ email: "", password: "" });
-        setShowAddForm(false);
-        alert("✅ Utilizator creat cu succes!");
-      } else {
-        alert(`❌ Eroare: ${result.error}`);
+      // If changing own role, refresh auth context
+      if (targetUserId === userId) {
+        await refreshRole();
       }
-    } catch (error) {
-      console.error("Error creating user:", error);
-      alert("Eroare la crearea utilizatorului.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleResetPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!resetPasswordData.newPassword) {
-      alert("Te rog introdu noua parolă.");
-      return;
-    }
-
-    if (resetPasswordData.newPassword.length < 6) {
-      alert("Parola trebuie să aibă minim 6 caractere.");
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      const result = await userService.resetPassword(resetPasswordData.userId, resetPasswordData.newPassword);
       
-      if (result.success) {
-        setResetPasswordData({ userId: "", newPassword: "" });
-        setShowResetForm(null);
-        alert("✅ Parolă resetată cu succes!");
-      } else {
-        alert(`❌ Eroare: ${result.error}`);
-      }
-    } catch (error) {
-      console.error("Error resetting password:", error);
-      alert("Eroare la resetarea parolei.");
-    } finally {
-      setSubmitting(false);
+      alert(`Rolul a fost actualizat la ${newTargetRole === 'super_admin' ? 'Super Admin' : 'Admin'}`);
+    } else {
+      setError(result.error || "Eroare la schimbarea rolului");
     }
+
+    setRoleChangeLoading(false);
   };
 
-  const handleDeleteUser = async (userId: string, email: string) => {
-    if (email === userEmail) {
-      alert("❌ Nu poți șterge propriul cont!");
+  const handleDeleteUser = async (targetUserId: string, targetUserEmail: string) => {
+    if (targetUserId === userId) {
+      alert("Nu poți șterge propriul cont!");
       return;
     }
 
-    if (!confirm(`Sigur vrei să ștergi utilizatorul ${email}?\n\nAcțiunea este permanentă și nu poate fi anulată.`)) {
+    if (!confirm(`Ești sigur că vrei să ștergi utilizatorul ${targetUserEmail}?`)) {
       return;
     }
 
-    try {
-      const result = await userService.deleteUser(userId);
-      
-      if (result.success) {
-        await loadUsers();
-        alert("✅ Utilizator șters cu succes!");
-      } else {
-        alert(`❌ Eroare: ${result.error}`);
-      }
-    } catch (error) {
-      console.error("Error deleting user:", error);
-      alert("Eroare la ștergerea utilizatorului.");
+    setError(null);
+    const result = await userService.deleteUser(targetUserId, userRole || 'admin');
+
+    if (result.success) {
+      await loadUsers();
+    } else {
+      setError(result.error || "Eroare la ștergerea utilizatorului");
     }
   };
 
-  const openResetForm = (userId: string) => {
-    setResetPasswordData({ userId, newPassword: "" });
-    setShowResetForm(userId);
+  const getRoleBadge = (role: UserRole) => {
+    if (role === 'super_admin') {
+      return (
+        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-300 border border-purple-500/30">
+          <Crown className="w-3 h-3" />
+          Super Admin
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-300 border border-blue-500/30">
+        <Shield className="w-3 h-3" />
+        Admin
+      </span>
+    );
   };
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return "Niciodată";
-    return new Date(dateString).toLocaleDateString("ro-RO", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
-    });
-  };
-
-  if (!isAuthenticated) {
-    return null;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
+        <div className="text-white text-xl">Se încarcă...</div>
+      </div>
+    );
   }
 
   return (
     <>
       <SEO 
-        title="Gestionare Utilizatori - Admin - Oikos Energy"
-        description="Gestionează utilizatorii admin ai platformei Oikos Energy"
+        title="Gestionare Utilizatori - Admin Oikos Energy"
+        description="Panou administrare utilizatori"
       />
-      <Navigation />
       
-      <main className="min-h-screen pt-32 pb-20">
-        <div className="container mx-auto px-4 lg:px-8">
+      <main className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 py-8 px-4">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
           <div className="flex items-center justify-between mb-8 animate-fade-in">
-            <div>
-              <div className="flex items-center gap-4 mb-2">
-                <Link href="/admin/dashboard">
-                  <Button variant="outline" size="sm" className="border-white/20">
-                    <ArrowLeft className="w-4 h-4 mr-2" />
-                    Înapoi la Dashboard
-                  </Button>
-                </Link>
-              </div>
-              <h1 className="text-4xl font-heading font-bold text-foreground mb-2">
-                <Shield className="inline-block w-8 h-8 mr-3 text-emerald-500" />
-                Gestionare <span className="text-gradient">Utilizatori</span>
+            <div className="flex items-center gap-4">
+              <Link href="/admin/dashboard">
+                <Button variant="outline" size="sm" className="gap-2">
+                  <ArrowLeft className="w-4 h-4" />
+                  Dashboard
+                </Button>
+              </Link>
+              <h1 className="text-3xl font-bold text-white">
+                Gestionare Utilizatori
               </h1>
-              <p className="text-muted-foreground">
-                Administrează conturile admin ale platformei Oikos Energy
-              </p>
             </div>
-            <Button
-              onClick={handleLogout}
-              variant="outline"
-              className="border-destructive/50 text-destructive hover:bg-destructive/10"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Deconectare
-            </Button>
+            
+            {isSuperAdmin && (
+              <Button 
+                onClick={() => setShowAddForm(!showAddForm)}
+                className="gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
+              >
+                {showAddForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                {showAddForm ? "Anulează" : "Adaugă Admin Nou"}
+              </Button>
+            )}
           </div>
 
-          {!showAddForm && (
-            <Button
-              onClick={() => setShowAddForm(true)}
-              className="mb-8 bg-emerald-500 hover:bg-emerald-600 text-white glow-emerald"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Adaugă Admin Nou
-            </Button>
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300 animate-fade-in">
+              {error}
+            </div>
           )}
 
-          {showAddForm && (
-            <div className="glass-card rounded-2xl p-8 mb-8 animate-slide-up">
-              <h2 className="text-2xl font-heading font-bold text-foreground mb-6">
-                Adaugă Administrator Nou
-              </h2>
-
-              <form onSubmit={handleAddUser} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">
-                      <Mail className="inline-block w-4 h-4 mr-2" />
-                      Email *
-                    </Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={newUserData.email}
-                      onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
-                      placeholder="admin@oikosenergy.ro"
-                      required
-                      className="bg-background/50 border-white/10"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="password">
-                      <Key className="inline-block w-4 h-4 mr-2" />
-                      Parolă *
-                    </Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      value={newUserData.password}
-                      onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
-                      placeholder="Minim 6 caractere"
-                      required
-                      minLength={6}
-                      className="bg-background/50 border-white/10"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Parola trebuie să aibă minim 6 caractere
-                    </p>
-                  </div>
+          {/* Add User Form */}
+          {showAddForm && isSuperAdmin && (
+            <div className="mb-8 p-6 bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 animate-fade-in">
+              <h2 className="text-xl font-semibold text-white mb-4">Adaugă Administrator Nou</h2>
+              
+              <form onSubmit={handleAddUser} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    className="w-full px-4 py-2 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                    placeholder="admin@oikosenergy.ro"
+                    required
+                  />
                 </div>
 
-                <div className="flex gap-3">
-                  <Button
-                    type="submit"
-                    disabled={submitting}
-                    className="bg-emerald-500 hover:bg-emerald-600 text-white glow-emerald"
-                  >
-                    {submitting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Se creează...
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="w-4 h-4 mr-2" />
-                        Creează Administrator
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      setShowAddForm(false);
-                      setNewUserData({ email: "", password: "" });
-                    }}
-                    variant="outline"
-                    className="border-white/20"
-                  >
-                    Anulează
-                  </Button>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Parolă (minim 6 caractere)
+                  </label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full px-4 py-2 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                    placeholder="••••••"
+                    required
+                    minLength={6}
+                  />
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Rol
+                  </label>
+                  <select
+                    value={newRole}
+                    onChange={(e) => setNewRole(e.target.value as UserRole)}
+                    className="w-full px-4 py-2 bg-white/5 border border-white/20 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="admin">Admin</option>
+                    <option value="super_admin">Super Admin</option>
+                  </select>
+                  <p className="mt-1 text-xs text-gray-400">
+                    Admin: Gestionează proiecte | Super Admin: Control complet (inclusiv utilizatori)
+                  </p>
+                </div>
+
+                {addError && (
+                  <div className="p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300 text-sm">
+                    {addError}
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  disabled={addLoading}
+                  className="w-full gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
+                >
+                  {addLoading ? "Se creează..." : "Creează Administrator"}
+                </Button>
               </form>
             </div>
           )}
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-heading font-bold text-foreground">
-                Administratori ({users.length})
-              </h2>
-              <div className="text-sm text-muted-foreground">
-                Conectat ca: <span className="text-emerald-400 font-semibold">{userEmail}</span>
-              </div>
-            </div>
-            
-            {loading ? (
-              <div className="text-center py-20">
-                <Loader2 className="w-8 h-8 animate-spin text-emerald-500 mx-auto mb-4" />
-                <p className="text-muted-foreground">Se încarcă utilizatorii...</p>
-              </div>
-            ) : users.length === 0 ? (
-              <div className="text-center py-20 glass-card rounded-2xl">
-                <User className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground text-lg mb-4">
-                  Nu există utilizatori înregistrați.
-                </p>
-                <Button
-                  onClick={() => setShowAddForm(true)}
-                  className="bg-emerald-500 hover:bg-emerald-600 text-white glow-emerald"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Adaugă Primul Administrator
-                </Button>
+          {/* Users Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {users.length === 0 ? (
+              <div className="col-span-full text-center py-12 text-gray-400">
+                <User className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                <p>Nu există utilizatori înregistrați</p>
               </div>
             ) : (
-              users.map((user, index) => (
+              users.map((user) => (
                 <div
                   key={user.id}
-                  className="glass-card rounded-xl p-6 hover:scale-[1.01] transition-all duration-300 animate-fade-in"
-                  style={{ animationDelay: `${index * 50}ms` }}
+                  className="p-6 bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 hover:bg-white/15 transition-all duration-300 animate-fade-in"
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
-                          <User className="w-5 h-5 text-emerald-400" />
-                        </div>
-                        <div>
-                          <h3 className="font-heading font-bold text-lg text-foreground">
-                            {user.email}
-                          </h3>
-                          {user.email === userEmail && (
-                            <span className="text-xs px-2 py-1 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-400">
-                              Tu
-                            </span>
-                          )}
-                        </div>
+                  {/* User Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
+                        <User className="w-6 h-6 text-white" />
                       </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-emerald-500" />
-                          <span>Creat: {formatDate(user.created_at)}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Clock className="w-4 h-4 text-emerald-500" />
-                          <span>Ultima autentificare: {formatDate(user.last_sign_in_at)}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Shield className="w-4 h-4 text-emerald-500" />
-                          <span>
-                            Status: {user.email_confirmed_at ? (
-                              <span className="text-emerald-400 font-semibold">✓ Confirmat</span>
-                            ) : (
-                              <span className="text-yellow-400 font-semibold">⏳ În așteptare</span>
-                            )}
-                          </span>
-                        </div>
+                      <div>
+                        <p className="text-white font-medium">{user.email}</p>
+                        <p className="text-xs text-gray-400">
+                          {new Date(user.created_at).toLocaleDateString("ro-RO")}
+                        </p>
                       </div>
-
-                      {showResetForm === user.id && (
-                        <form onSubmit={handleResetPassword} className="mt-4 p-4 rounded-lg bg-background/30 border border-white/10">
-                          <Label htmlFor={`reset-${user.id}`} className="text-sm mb-2 block">
-                            Parolă Nouă (minim 6 caractere)
-                          </Label>
-                          <div className="flex gap-2">
-                            <Input
-                              id={`reset-${user.id}`}
-                              type="password"
-                              value={resetPasswordData.newPassword}
-                              onChange={(e) => setResetPasswordData({ ...resetPasswordData, newPassword: e.target.value })}
-                              placeholder="Introdu parola nouă"
-                              required
-                              minLength={6}
-                              className="bg-background/50 border-white/10"
-                            />
-                            <Button
-                              type="submit"
-                              disabled={submitting}
-                              size="sm"
-                              className="bg-emerald-500 hover:bg-emerald-600 text-white"
-                            >
-                              {submitting ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                              ) : (
-                                "Salvează"
-                              )}
-                            </Button>
-                            <Button
-                              type="button"
-                              onClick={() => {
-                                setShowResetForm(null);
-                                setResetPasswordData({ userId: "", newPassword: "" });
-                              }}
-                              size="sm"
-                              variant="outline"
-                              className="border-white/20"
-                            >
-                              Anulează
-                            </Button>
-                          </div>
-                        </form>
-                      )}
                     </div>
+                    {user.id === userId && (
+                      <span className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded-full">
+                        Tu
+                      </span>
+                    )}
+                  </div>
 
-                    <div className="flex gap-2 shrink-0">
+                  {/* Role Badge */}
+                  <div className="mb-4">
+                    {getRoleBadge(user.role)}
+                  </div>
+
+                  {/* User Info */}
+                  <div className="space-y-2 mb-4 text-sm">
+                    <div className="flex justify-between text-gray-400">
+                      <span>Status:</span>
+                      <span className={user.email_confirmed_at ? "text-green-400" : "text-yellow-400"}>
+                        {user.email_confirmed_at ? "✓ Confirmat" : "⏳ În așteptare"}
+                      </span>
+                    </div>
+                    {user.last_sign_in_at && (
+                      <div className="flex justify-between text-gray-400">
+                        <span>Ultima autentificare:</span>
+                        <span className="text-gray-300">
+                          {new Date(user.last_sign_in_at).toLocaleDateString("ro-RO")}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Reset Password Form */}
+                  {resetUserId === user.id ? (
+                    <div className="space-y-3 p-3 bg-white/5 rounded-lg border border-white/10 mb-3">
+                      <input
+                        type="password"
+                        value={resetPassword}
+                        onChange={(e) => setResetPassword(e.target.value)}
+                        placeholder="Parolă nouă (min 6 caractere)"
+                        className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-white text-sm placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                        minLength={6}
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => handleResetPassword(user.id)}
+                          disabled={resetLoading}
+                          size="sm"
+                          className="flex-1 gap-2 bg-blue-500 hover:bg-blue-600"
+                        >
+                          <Save className="w-3 h-3" />
+                          Salvează
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            setResetUserId(null);
+                            setResetPassword("");
+                          }}
+                          size="sm"
+                          variant="outline"
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {/* Actions */}
+                  {isSuperAdmin && (
+                    <div className="flex gap-2">
+                      {/* Change Role Button */}
+                      {user.id !== userId && (
+                        <Button
+                          onClick={() => {
+                            const newTargetRole = user.role === 'super_admin' ? 'admin' : 'super_admin';
+                            if (confirm(`Schimbi rolul lui ${user.email} la ${newTargetRole === 'super_admin' ? 'Super Admin' : 'Admin'}?`)) {
+                              handleChangeRole(user.id, newTargetRole);
+                            }
+                          }}
+                          disabled={roleChangeLoading}
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 gap-2 border-purple-500/50 text-purple-300 hover:bg-purple-500/20"
+                        >
+                          {user.role === 'super_admin' ? <Shield className="w-4 h-4" /> : <Crown className="w-4 h-4" />}
+                          {user.role === 'super_admin' ? 'Retrogradează' : 'Promovează'}
+                        </Button>
+                      )}
+
+                      {/* Reset Password Button */}
                       <Button
-                        onClick={() => openResetForm(user.id)}
-                        variant="outline"
+                        onClick={() => {
+                          setResetUserId(user.id);
+                          setResetPassword("");
+                        }}
                         size="sm"
-                        className="border-blue-500/50 text-blue-400 hover:bg-blue-500/10"
-                        title="Resetează Parolă"
+                        variant="outline"
+                        className="flex-1 gap-2 border-blue-500/50 text-blue-300 hover:bg-blue-500/20"
                       >
                         <Key className="w-4 h-4" />
+                        Resetează
                       </Button>
-                      <Button
-                        onClick={() => handleDeleteUser(user.id, user.email)}
-                        variant="outline"
-                        size="sm"
-                        className="border-destructive/50 text-destructive hover:bg-destructive/10"
-                        disabled={user.email === userEmail}
-                        title={user.email === userEmail ? "Nu poți șterge propriul cont" : "Șterge Utilizator"}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+
+                      {/* Delete Button */}
+                      {user.id !== userId && (
+                        <Button
+                          onClick={() => handleDeleteUser(user.id, user.email)}
+                          size="sm"
+                          variant="outline"
+                          className="gap-2 border-red-500/50 text-red-300 hover:bg-red-500/20"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
-                  </div>
+                  )}
                 </div>
               ))
             )}

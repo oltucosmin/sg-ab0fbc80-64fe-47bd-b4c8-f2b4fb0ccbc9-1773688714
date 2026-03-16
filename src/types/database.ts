@@ -6,9 +6,35 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
+export type UserRole = 'super_admin' | 'admin';
+
 export interface Database {
   public: {
     Tables: {
+      user_roles: {
+        Row: {
+          id: string
+          user_id: string
+          role: UserRole
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          role: UserRole
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          role?: UserRole
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       projects: {
         Row: {
           id: string

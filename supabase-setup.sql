@@ -1,6 +1,75 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- Create user_roles table
+CREATE TABLE IF NOT EXISTS user_roles (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  role TEXT NOT NULL CHECK (role IN ('super_admin', 'admin')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id)
+);
+
+-- Create index for faster role lookups
+CREATE INDEX IF NOT EXISTS idx_user_roles_user_id ON user_roles(user_id);
+
+-- Enable RLS on user_roles table
+ALTER TABLE user_roles ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Authenticated users can read all roles
+CREATE POLICY "Authenticated users can read roles"
+ON user_roles FOR SELECT
+USING (auth.role() = 'authenticated');
+
+-- Policy: Only super_admins can insert roles
+CREATE POLICY "Super admins can insert roles"
+ON user_roles FOR INSERT
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM user_roles
+    WHERE user_id = auth.uid()
+    AND role = 'super_admin'
+  )
+);
+
+-- Policy: Only super_admins can update roles
+CREATE POLICY "Super admins can update roles"
+ON user_roles FOR UPDATE
+USING (
+  EXISTS (
+    SELECT 1 FROM user_roles
+    WHERE user_id = auth.uid()
+    AND role = 'super_admin'
+  )
+);
+
+-- Policy: Only super_admins can delete roles
+CREATE POLICY "Super admins can delete roles"
+ON user_roles FOR DELETE
+USING (
+  EXISTS (
+    SELECT 1 FROM user_roles
+    WHERE user_id = auth.uid()
+    AND role = 'super_admin'
+  )
+);
+
+-- Function to update updated_at on user_roles
+CREATE OR REPLACE FUNCTION update_user_roles_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Trigger for user_roles
+CREATE TRIGGER update_user_roles_timestamp
+  BEFORE UPDATE ON user_roles
+  FOR EACH ROW
+  EXECUTE FUNCTION update_user_roles_updated_at();
+
 -- Create projects table
 CREATE TABLE IF NOT EXISTS projects (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

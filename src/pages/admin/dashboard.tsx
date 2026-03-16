@@ -1,21 +1,20 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useAuth } from "@/contexts/AuthContext";
-import { Navigation } from "@/components/Navigation";
 import { SEO } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, LogOut, Save, X, Upload, Loader2, Users } from "lucide-react";
+import { Plus, Pencil, Trash2, LogOut, Save, X, Upload, Loader2, Users, Crown, Shield } from "lucide-react";
 import { projectService } from "@/services/projectService";
 import type { Project } from "@/types/project";
 import Link from "next/link";
 
 export default function AdminDashboard() {
-  const { isAuthenticated, logout } = useAuth();
   const router = useRouter();
+  const { isAuthenticated, userEmail, userRole, isSuperAdmin, logout } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -167,29 +166,40 @@ export default function AdminDashboard() {
         <div className="container mx-auto px-4 lg:px-8">
           <div className="flex items-center justify-between mb-8 animate-fade-in">
             <div>
-              <h1 className="text-4xl font-heading font-bold text-foreground mb-2">
-                Dashboard <span className="text-gradient">Admin</span>
+              <h1 className="text-3xl font-bold text-white mb-2">
+                Panou de Administrare
               </h1>
-              <p className="text-muted-foreground">
-                Gestionează proiectele Oikos Energy
-              </p>
+              <div className="flex items-center gap-3">
+                <p className="text-blue-200">Bine ai revenit, {userEmail}</p>
+                {userRole === 'super_admin' ? (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-300 border border-purple-500/30">
+                    <Crown className="w-3 h-3" />
+                    Super Admin
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                    <Shield className="w-3 h-3" />
+                    Admin
+                  </span>
+                )}
+              </div>
             </div>
+            
             <div className="flex gap-3">
-              <Link href="/admin/users">
-                <Button
-                  variant="outline"
-                  className="border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10"
-                >
-                  <Users className="w-4 h-4 mr-2" />
-                  Utilizatori
-                </Button>
-              </Link>
+              {isSuperAdmin && (
+                <Link href="/admin/users">
+                  <Button variant="outline" className="gap-2 border-purple-500/50 text-purple-300 hover:bg-purple-500/20">
+                    <Users className="w-4 h-4" />
+                    Utilizatori
+                  </Button>
+                </Link>
+              )}
               <Button
-                onClick={handleLogout}
+                onClick={logout}
                 variant="outline"
-                className="border-destructive/50 text-destructive hover:bg-destructive/10"
+                className="gap-2 border-red-500/50 text-red-300 hover:bg-red-500/20"
               >
-                <LogOut className="w-4 h-4 mr-2" />
+                <LogOut className="w-4 h-4" />
                 Deconectare
               </Button>
             </div>
