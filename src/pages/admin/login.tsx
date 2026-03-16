@@ -121,10 +121,6 @@ export default function AdminLogin() {
               </Link>
             </div>
           </div>
-
-          <p className="text-center text-xs text-muted-foreground mt-6">
-            Demo credentials: admin@oikosenergy.ro / OikosAdmin2024!
-          </p>
         </div>
       </div>
     </>
