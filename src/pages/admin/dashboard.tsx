@@ -8,10 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, LogOut, Save, X, Upload, Loader2, Users, Crown, Shield } from "lucide-react";
+import { Plus, Pencil, Trash2, LogOut, Save, X, Upload, Loader2, Users, Crown, Shield, FileText, Briefcase } from "lucide-react";
 import { projectService } from "@/services/projectService";
 import type { Project } from "@/types/project";
 import Link from "next/link";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -370,6 +373,32 @@ export default function AdminDashboard() {
               </form>
             </div>
           )}
+
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => router.push("/admin/content")}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Conținut Site
+                </CardTitle>
+                <CardDescription>
+                  Editează texte, contact info, social media
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => router.push("/admin/services")}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Briefcase className="h-5 w-5" />
+                  Servicii
+                </CardTitle>
+                <CardDescription>
+                  Gestionează serviciile oferite
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </div>
 
           <div className="space-y-4">
             <h2 className="text-2xl font-heading font-bold text-foreground mb-4">
