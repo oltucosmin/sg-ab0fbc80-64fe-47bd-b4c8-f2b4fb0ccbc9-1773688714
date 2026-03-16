@@ -59,7 +59,6 @@
     "react-hook-form": "^7.54.2",
     "react-intersection-observer": "^9.15.1",
     "react-resizable-panels": "^2.1.7",
-    "sharp": "^0.34.5",
     "stripe": "^17.6.0",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
@@ -74,7 +73,9 @@
     "@types/react-dom": "^18",
     "eslint": "^9.27.0",
     "eslint-config-next": "^15.2.8",
+    "jimp": "^1.6.0",
     "postcss": "^8",
+    "sharp": "^0.34.5",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
   }
