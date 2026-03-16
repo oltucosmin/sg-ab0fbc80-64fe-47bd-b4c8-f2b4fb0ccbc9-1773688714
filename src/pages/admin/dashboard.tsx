@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, LogOut, Save, X, Upload, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, LogOut, Save, X, Upload, Loader2, Users } from "lucide-react";
 import { projectService } from "@/services/projectService";
 import type { Project } from "@/types/project";
+import Link from "next/link";
 
 export default function AdminDashboard() {
   const { isAuthenticated, logout } = useAuth();
@@ -173,14 +174,25 @@ export default function AdminDashboard() {
                 Gestionează proiectele Oikos Energy
               </p>
             </div>
-            <Button
-              onClick={handleLogout}
-              variant="outline"
-              className="border-destructive/50 text-destructive hover:bg-destructive/10"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Deconectare
-            </Button>
+            <div className="flex gap-3">
+              <Link href="/admin/users">
+                <Button
+                  variant="outline"
+                  className="border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10"
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  Utilizatori
+                </Button>
+              </Link>
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                className="border-destructive/50 text-destructive hover:bg-destructive/10"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Deconectare
+              </Button>
+            </div>
           </div>
 
           {!showForm && (
