@@ -230,3 +230,157 @@ VALUES
     '2024-06-30',
     false
   );
+
+-- Site Settings Table (Contact info, social media, etc.)
+CREATE TABLE IF NOT EXISTS public.site_settings (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  key VARCHAR(100) UNIQUE NOT NULL,
+  value TEXT,
+  type VARCHAR(50) DEFAULT 'text', -- text, email, phone, url, json
+  category VARCHAR(50), -- contact, social, general, seo
+  label VARCHAR(200),
+  description TEXT,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_by UUID REFERENCES auth.users(id)
+);
+
+-- Page Content Table (Editable page sections)
+CREATE TABLE IF NOT EXISTS public.page_content (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  page VARCHAR(100) NOT NULL, -- home, about, services, contact
+  section VARCHAR(100) NOT NULL, -- hero, about, services, footer
+  key VARCHAR(100) NOT NULL,
+  value TEXT,
+  type VARCHAR(50) DEFAULT 'text', -- text, html, markdown, image
+  order_index INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_by UUID REFERENCES auth.users(id),
+  UNIQUE(page, section, key)
+);
+
+-- Services Table (Already exists, updating if needed)
+CREATE TABLE IF NOT EXISTS public.services (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  title VARCHAR(200) NOT NULL,
+  description TEXT,
+  icon VARCHAR(100),
+  features TEXT[], -- Array of feature points
+  order_index INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Testimonials Table
+CREATE TABLE IF NOT EXISTS public.testimonials (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  client_name VARCHAR(200) NOT NULL,
+  client_position VARCHAR(200),
+  client_company VARCHAR(200),
+  content TEXT NOT NULL,
+  rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+  image_url TEXT,
+  is_featured BOOLEAN DEFAULT false,
+  is_active BOOLEAN DEFAULT true,
+  order_index INTEGER DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Insert default site settings
+INSERT INTO public.site_settings (key, value, type, category, label, description) VALUES
+  ('company_name', 'Oikos Energy', 'text', 'general', 'Nume Companie', 'Numele companiei afișat pe site'),
+  ('contact_phone', '+40 XXX XXX XXX', 'phone', 'contact', 'Telefon', 'Număr de telefon principal'),
+  ('contact_email', 'contact@oikosenergy.ro', 'email', 'contact', 'Email', 'Adresa de email principală'),
+  ('contact_address', 'București, România', 'text', 'contact', 'Adresă', 'Adresa fizică a companiei'),
+  ('social_facebook', '', 'url', 'social', 'Facebook', 'Link profil Facebook'),
+  ('social_instagram', '', 'url', 'social', 'Instagram', 'Link profil Instagram'),
+  ('social_linkedin', '', 'url', 'social', 'LinkedIn', 'Link profil LinkedIn'),
+  ('social_twitter', '', 'url', 'social', 'Twitter/X', 'Link profil Twitter'),
+  ('seo_title', 'Oikos Energy - Soluții Energetice Sustenabile', 'text', 'seo', 'Titlu SEO', 'Titlu pentru motoarele de căutare'),
+  ('seo_description', 'Experți în energie solară, eficiență energetică și soluții verzi pentru case și afaceri.', 'text', 'seo', 'Descriere SEO', 'Descriere pentru motoarele de căutare'),
+  ('hero_title', 'Viitorul Energiei Este Verde', 'text', 'content', 'Titlu Hero', 'Titlu principal pe pagina de start'),
+  ('hero_subtitle', 'Transformăm energia solară în economii reale pentru casa și afacerea ta', 'text', 'content', 'Subtitlu Hero', 'Subtitlu pe pagina de start')
+ON CONFLICT (key) DO NOTHING;
+
+-- Insert default page content
+INSERT INTO public.page_content (page, section, key, value, type) VALUES
+  ('home', 'hero', 'title', 'Viitorul Energiei Este Verde', 'text'),
+  ('home', 'hero', 'subtitle', 'Transformăm energia solară în economii reale pentru casa și afacerea ta', 'text'),
+  ('home', 'about', 'title', 'Despre Oikos Energy', 'text'),
+  ('home', 'about', 'description', 'Suntem lideri în soluții energetice sustenabile, aducând tehnologie de vârf și expertise locală pentru a transforma modul în care consumăm energia.', 'html'),
+  ('about', 'mission', 'title', 'Misiunea Noastră', 'text'),
+  ('about', 'mission', 'content', 'Să accelerăm tranziția către energie curată prin soluții personalizate și accesibile pentru fiecare client.', 'html'),
+  ('about', 'vision', 'title', 'Viziunea Noastră', 'text'),
+  ('about', 'vision', 'content', 'O Românie alimentată 100% de energie regenerabilă, unde fiecare casă și afacere contribuie la un viitor sustenabil.', 'html')
+ON CONFLICT (page, section, key) DO NOTHING;
+
+-- Insert default services
+INSERT INTO public.services (title, description, icon, features, order_index) VALUES
+  ('Panouri Solare', 'Instalare și mentenanță sisteme fotovoltaice de ultimă generație', 'Sun', ARRAY['Consultanță gratuită', 'Instalare profesională', 'Garanție extinsă', 'Monitorizare remotă'], 1),
+  ('Eficiență Energetică', 'Audit și optimizare consum energetic pentru case și afaceri', 'Zap', ARRAY['Audit energetic complet', 'Recomandări personalizate', 'ROI garantat', 'Suport continuu'], 2),
+  ('Sisteme de Stocare', 'Baterii și soluții de stocare energie pentru independență totală', 'Battery', ARRAY['Baterii Tesla Powerwall', 'Backup automat', 'Optimizare costuri', 'Integrare smart home'], 3),
+  ('Smart Energy Management', 'Sisteme inteligente de monitorizare și control energetic', 'Gauge', ARRAY['Monitorizare în timp real', 'Aplicație mobilă', 'Rapoarte detaliate', 'Automatizări'], 4)
+ON CONFLICT DO NOTHING;
+
+-- Enable RLS
+ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.page_content ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.services ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.testimonials ENABLE ROW LEVEL SECURITY;
+
+-- Policies for site_settings (read public, write admin)
+CREATE POLICY "Anyone can view site settings" ON public.site_settings FOR SELECT USING (true);
+CREATE POLICY "Only admins can update site settings" ON public.site_settings FOR UPDATE USING (
+  EXISTS (
+    SELECT 1 FROM public.user_roles
+    WHERE user_roles.user_id = auth.uid()
+    AND user_roles.role IN ('admin', 'super_admin')
+  )
+);
+
+-- Policies for page_content (read public, write admin)
+CREATE POLICY "Anyone can view page content" ON public.page_content FOR SELECT USING (is_active = true);
+CREATE POLICY "Admins can view all page content" ON public.page_content FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM public.user_roles
+    WHERE user_roles.user_id = auth.uid()
+    AND user_roles.role IN ('admin', 'super_admin')
+  )
+);
+CREATE POLICY "Only admins can manage page content" ON public.page_content FOR ALL USING (
+  EXISTS (
+    SELECT 1 FROM public.user_roles
+    WHERE user_roles.user_id = auth.uid()
+    AND user_roles.role IN ('admin', 'super_admin')
+  )
+);
+
+-- Policies for services (read public, write admin)
+CREATE POLICY "Anyone can view active services" ON public.services FOR SELECT USING (is_active = true);
+CREATE POLICY "Admins can view all services" ON public.services FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM public.user_roles
+    WHERE user_roles.user_id = auth.uid()
+    AND user_roles.role IN ('admin', 'super_admin')
+  )
+);
+CREATE POLICY "Only admins can manage services" ON public.services FOR ALL USING (
+  EXISTS (
+    SELECT 1 FROM public.user_roles
+    WHERE user_roles.user_id = auth.uid()
+    AND user_roles.role IN ('admin', 'super_admin')
+  )
+);
+
+-- Policies for testimonials (read public, write admin)
+CREATE POLICY "Anyone can view active testimonials" ON public.testimonials FOR SELECT USING (is_active = true);
+CREATE POLICY "Only admins can manage testimonials" ON public.testimonials FOR ALL USING (
+  EXISTS (
+    SELECT 1 FROM public.user_roles
+    WHERE user_roles.user_id = auth.uid()
+    AND user_roles.role IN ('admin', 'super_admin')
+  )
+);
