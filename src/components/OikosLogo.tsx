@@ -9,16 +9,16 @@ interface OikosLogoProps {
 
 export function OikosLogo({ className, size = "md", variant = "default" }: OikosLogoProps) {
   const sizeMap = {
-    sm: { width: 120, height: 40 },
-    md: { width: 160, height: 53 },
-    lg: { width: 200, height: 66 },
-    xl: { width: 280, height: 93 }
+    sm: { width: 80, height: 27 },
+    md: { width: 120, height: 40 },
+    lg: { width: 160, height: 53 },
+    xl: { width: 200, height: 66 }
   };
 
   const dimensions = sizeMap[size];
 
   return (
-    <div className={cn("relative", className)}>
+    <div className={cn("relative flex items-center", className)}>
       <Image
         src="/oikos-logo.jpg"
         alt="Oikos Energy - Panouri Fotovoltaice & Pompe Caldura"
@@ -26,6 +26,10 @@ export function OikosLogo({ className, size = "md", variant = "default" }: Oikos
         height={dimensions.height}
         priority
         className="object-contain"
+        style={{
+          maxWidth: '100%',
+          height: 'auto',
+        }}
       />
     </div>
   );

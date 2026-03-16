@@ -20,12 +20,12 @@ export function Navigation() {
       <div className="container mx-auto px-4 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-3 group">
+          <Link href="/" className="flex items-center space-x-2 sm:space-x-3 group">
             <OikosLogo 
-              size="md" 
-              className="transition-transform duration-300 group-hover:scale-110 drop-shadow-[0_0_12px_rgba(16,185,129,0.4)]" 
+              size="sm"
+              className="transition-transform duration-300 group-hover:scale-105 w-20 sm:w-28 md:w-32" 
             />
-            <span className="text-xl font-heading font-bold text-gradient hidden sm:block">
+            <span className="text-base sm:text-xl font-heading font-bold text-gradient hidden xs:block">
               Oikos Energy
             </span>
           </Link>

@@ -11,12 +11,12 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company Info */}
           <div className="space-y-4">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2 sm:space-x-3">
               <OikosLogo 
-                size="md" 
-                className="drop-shadow-[0_0_12px_rgba(16,185,129,0.3)]" 
+                size="sm" 
+                className="w-16 sm:w-20" 
               />
-              <span className="text-lg font-heading font-bold text-gradient">
+              <span className="text-base sm:text-lg font-heading font-bold text-gradient">
                 Oikos Energy
               </span>
             </div>
