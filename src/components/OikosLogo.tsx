@@ -20,7 +20,7 @@ export function OikosLogo({ className, size = "md", variant = "default" }: Oikos
   return (
     <div className={cn("relative flex items-center", className)}>
       <Image
-        src="/oikos-logo.jpg"
+        src="/oikos-logo.png"
         alt="Oikos Energy - Panouri Fotovoltaice & Pompe Caldura"
         width={dimensions.width}
         height={dimensions.height}
