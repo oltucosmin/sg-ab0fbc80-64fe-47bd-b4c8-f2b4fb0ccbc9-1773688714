@@ -1,0 +1,39 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+  <defs>
+    <linearGradient id='sunGrad' x1='50%' y1='0%' x2='50%' y2='100%'>
+      <stop offset='0%' style='stop-color:#F4B41A'/>
+      <stop offset='100%' style='stop-color:#FFA500'/>
+    </linearGradient>
+    <linearGradient id='panelGrad' x1='50%' y1='0%' x2='50%' y2='100%'>
+      <stop offset='0%' style='stop-color:#0066B3'/>
+      <stop offset='100%' style='stop-color:#004080'/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Sun rays -->
+  <g fill='url(#sunGrad)'>
+    <rect x='48' y='10' width='4' height='15' rx='2'/>
+    <rect x='70' y='15' width='4' height='12' rx='2' transform='rotate(45 72 21)'/>
+    <rect x='80' y='35' width='15' height='4' rx='2'/>
+    <rect x='75' y='55' width='12' height='4' rx='2' transform='rotate(45 81 57)'/>
+    <rect x='48' y='75' width='4' height='15' rx='2'/>
+    <rect x='20' y='55' width='12' height='4' rx='2' transform='rotate(-45 26 57)'/>
+    <rect x='5' y='35' width='15' height='4' rx='2'/>
+    <rect x='20' y='15' width='4' height='12' rx='2' transform='rotate(-45 22 21)'/>
+  </g>
+  
+  <!-- Plug -->
+  <g fill='url(#panelGrad)'>
+    <rect x='43' y='25' width='14' height='18' rx='2'/>
+    <rect x='46' y='20' width='3' height='6' rx='1'/>
+    <rect x='51' y='20' width='3' height='6' rx='1'/>
+  </g>
+  
+  <!-- Solar panels -->
+  <g fill='url(#panelGrad)' opacity='0.9'>
+    <rect x='30' y='50' width='8' height='12' rx='1' transform='skewY(-10)'/>
+    <rect x='40' y='52' width='8' height='12' rx='1' transform='skewY(-10)'/>
+    <rect x='50' y='54' width='8' height='12' rx='1' transform='skewY(-10)'/>
+    <rect x='60' y='56' width='8' height='12' rx='1' transform='skewY(-10)'/>
+  </g>
+</svg>

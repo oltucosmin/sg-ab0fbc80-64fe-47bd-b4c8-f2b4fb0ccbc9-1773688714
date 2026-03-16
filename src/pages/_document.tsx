@@ -4,14 +4,18 @@ import { SEOElements } from "@/components/SEO";
 
 export default function Document() {
   return (
-    <Html lang="en">
+    <Html lang="ro">
       <Head>
         <SEOElements />
-        {/*
-          CRITICAL: DO NOT REMOVE THIS SCRIPT
-          The Softgen AI monitoring script is essential for core app functionality.
-          The application will not function without it.
-        */}
+        
+        {/* Favicon - Multiple sizes for best compatibility */}
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="alternate icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+        
+        {/* CRITICAL: DO NOT REMOVE THIS SCRIPT */}
         <script
           src="https://cdn.softgen.ai/script.js"
           async
