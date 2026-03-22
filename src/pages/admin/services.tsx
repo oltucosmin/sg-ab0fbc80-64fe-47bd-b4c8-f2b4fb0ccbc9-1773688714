@@ -12,24 +12,27 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { Plus, Edit, Trash2, Eye, EyeOff } from "lucide-react";
+import type { Database } from "@/integrations/supabase/types";
 
-interface Service {
-  id: string;
-  title: string;
-  description: string;
-  icon: string;
-  features: string[];
-  order_index: number;
-  is_active: boolean;
-}
+type Service = Database["public"]["Tables"]["services"]["Row"];
+type ServiceInsert = Database["public"]["Tables"]["services"]["Insert"];
 
 export default function ServicesManagement() {
   const router = useRouter();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [services, setServices] = useState<Service[]>([]);
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [newService, setNewService] = useState<ServiceInsert>({
+    title: "",
+    description: "",
+    icon: "",
+    features: [],
+    display_order: 1,
+  });
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -45,6 +48,7 @@ export default function ServicesManagement() {
 
   async function checkAuth() {
     const { data: { session } } = await supabase.auth.getSession();
+
     if (!session) {
       router.push("/admin/login");
       return;
@@ -56,7 +60,7 @@ export default function ServicesManagement() {
       .eq("user_id", session.user.id)
       .single();
 
-    if (!roleData || !["admin", "super_admin"].includes(roleData.role)) {
+    if (!roleData || !["admin", "super_admin"].includes((roleData as { role: string }).role)) {
       router.push("/admin/login");
       return;
     }
@@ -65,7 +69,7 @@ export default function ServicesManagement() {
   }
 
   async function loadServices() {
-    setLoading(true);
+    setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from("services")
@@ -82,52 +86,44 @@ export default function ServicesManagement() {
         variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function saveService(e: React.FormEvent) {
     e.preventDefault();
-    
-    const featuresArray = formData.features
-      .split("\n")
-      .map(f => f.trim())
-      .filter(f => f.length > 0);
-
-    const serviceData = {
-      title: formData.title,
-      description: formData.description,
-      icon: formData.icon,
-      features: featuresArray,
-      order_index: formData.order_index,
-      is_active: formData.is_active
-    };
-
     try {
+      setSaving(true);
+
+      const serviceData = {
+        title: newService.title,
+        description: newService.description,
+        icon: newService.icon,
+        features: newService.features,
+        display_order: newService.display_order,
+        is_active: newService.is_active,
+        updated_at: new Date().toISOString(),
+      };
+
       if (editingService) {
-        const { error } = await supabase
-          .from("services")
+        const { error } = await (supabase
+          .from("services") as any)
           .update(serviceData)
           .eq("id", editingService.id);
 
         if (error) throw error;
-
-        toast({
-          title: "Actualizat!",
-          description: "Serviciul a fost actualizat cu succes"
-        });
       } else {
-        const { error } = await supabase
-          .from("services")
+        const { error } = await (supabase
+          .from("services") as any)
           .insert([serviceData]);
 
         if (error) throw error;
-
-        toast({
-          title: "Adăugat!",
-          description: "Serviciul a fost adăugat cu succes"
-        });
       }
+
+      toast({
+        title: "Salvat cu succes",
+        description: `Serviciul a fost ${editingService ? "actualizat" : "creat"}.`,
+      });
 
       setDialogOpen(false);
       resetForm();
@@ -136,24 +132,26 @@ export default function ServicesManagement() {
       console.error("Error saving service:", error);
       toast({
         title: "Eroare",
-        description: "Nu s-a putut salva serviciul",
-        variant: "destructive"
+        description: "Nu s-a putut salva serviciul.",
+        variant: "destructive",
       });
+    } finally {
+      setSaving(false);
     }
   }
 
   async function toggleActive(service: Service) {
     try {
-      const { error } = await supabase
-        .from("services")
+      const { error } = await (supabase
+        .from("services") as any)
         .update({ is_active: !service.is_active })
         .eq("id", service.id);
 
       if (error) throw error;
 
       toast({
-        title: service.is_active ? "Dezactivat" : "Activat",
-        description: `Serviciul a fost ${service.is_active ? "dezactivat" : "activat"}`
+        title: "Status actualizat",
+        description: `Serviciul a fost ${!service.is_active ? "activat" : "dezactivat"}.`,
       });
 
       loadServices();
@@ -162,7 +160,7 @@ export default function ServicesManagement() {
       toast({
         title: "Eroare",
         description: "Nu s-a putut actualiza statusul",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   }
@@ -196,12 +194,12 @@ export default function ServicesManagement() {
 
   function openEditDialog(service: Service) {
     setEditingService(service);
-    setFormData({
+    setNewService({
       title: service.title,
       description: service.description,
       icon: service.icon,
-      features: service.features.join("\n"),
-      order_index: service.order_index,
+      features: service.features,
+      display_order: service.display_order,
       is_active: service.is_active
     });
     setDialogOpen(true);
@@ -219,7 +217,7 @@ export default function ServicesManagement() {
     });
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -262,7 +260,7 @@ export default function ServicesManagement() {
                         Completează informațiile despre serviciu
                       </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onSubmit={saveService} className="space-y-4">
                       <div className="space-y-2">
                         <Label htmlFor="title">Titlu</Label>
                         <Input

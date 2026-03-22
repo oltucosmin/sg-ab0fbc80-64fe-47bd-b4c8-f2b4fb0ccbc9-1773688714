@@ -24,7 +24,7 @@ export const userService = {
     // Fetch roles for all users
     const { data: rolesData, error: rolesError } = await supabase
       .from('user_roles')
-      .select('user_id, role');
+      .select('user_id, role') as any;
 
     if (rolesError) {
       console.error("Error fetching roles:", rolesError);
@@ -32,7 +32,7 @@ export const userService = {
     }
 
     // Create a map of user_id to role
-    const rolesMap = new Map(rolesData?.map(r => [r.user_id, r.role]) || []);
+    const rolesMap = new Map(rolesData?.map((r: any) => [r.user_id, r.role]) || []);
 
     return authData.users.map(user => ({
       id: user.id,
@@ -50,7 +50,7 @@ export const userService = {
       .from('user_roles')
       .select('role')
       .eq('user_id', userId)
-      .single();
+      .single() as any;
 
     if (error) {
       // If no role exists, default to 'admin'
@@ -60,7 +60,7 @@ export const userService = {
       throw new Error(error.message);
     }
 
-    return data.role;
+    return data?.role || 'admin';
   },
 
   // Check if user is super admin
@@ -93,7 +93,7 @@ export const userService = {
         .insert({
           user_id: data.user.id,
           role: role
-        });
+        } as any);
 
       if (roleError) {
         // Rollback: delete the auth user if role assignment fails
@@ -119,7 +119,7 @@ export const userService = {
         .upsert({
           user_id: userId,
           role: newRole
-        });
+        } as any);
 
       if (error) {
         return { success: false, error: error.message };

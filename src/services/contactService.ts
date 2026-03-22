@@ -8,21 +8,26 @@ export interface ContactSubmission {
   gdprConsent: boolean;
 }
 
-export const contactService = {
-  async submitContact(submission: ContactSubmission): Promise<void> {
-    const { error } = await supabase
-      .from('contact_submissions')
-      .insert({
+export async function submitContactForm(submission: ContactSubmission) {
+  try {
+    const { error } = await (supabase
+      .from('contact_submissions') as any)
+      .insert([{
         name: submission.name,
         email: submission.email,
         phone: submission.phone,
         message: submission.message,
-        gdpr_consent: submission.gdprConsent
-      });
+        gdpr_consent: submission.gdprConsent,
+      }]);
 
     if (error) {
       console.error('Error submitting contact form:', error);
       throw error;
     }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error in submitContactForm:', error);
+    return { success: false, error };
   }
-};
+}

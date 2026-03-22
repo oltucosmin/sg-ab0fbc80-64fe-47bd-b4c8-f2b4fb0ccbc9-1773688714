@@ -1,8 +1,10 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
+import type { User } from "@supabase/supabase-js";
 import { userService, type UserRole } from "@/services/userService";
 
 interface AuthContextType {
+  user: User | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
@@ -113,6 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{ 
+      user: null,
       isAuthenticated, 
       login, 
       logout, 

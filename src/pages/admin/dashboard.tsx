@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, LogOut, Save, X, Upload, Loader2, Users, Crown, Shield, FileText, Briefcase } from "lucide-react";
-import { projectService } from "@/services/projectService";
+import { getProjects, createProject, updateProject, deleteProject, uploadImage } from "@/services/projectService";
 import type { Project } from "@/types/project";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,34 +44,38 @@ export default function AdminDashboard() {
     }
   }, [isAuthenticated, router]);
 
-  const loadProjects = async () => {
+  async function loadProjects() {
     try {
-      setLoading(true);
-      const data = await projectService.getAllProjects();
-      setProjects(data);
+      const projectsData = await getProjects();
+      const transformedProjects: Project[] = projectsData.map((p) => ({
+        id: p.id,
+        title: p.title,
+        description: p.description,
+        imageUrl: p.image_url,
+        location: p.location,
+        power: p.power,
+        completedDate: p.completed_date,
+        category: p.category as "solar" | "heat-pump" | "hybrid",
+        isFeatured: p.featured,
+      }));
+      setProjects(transformedProjects);
     } catch (error) {
-      console.error("Error loading projects:", error);
-      
-      // Don't logout on error, just show message
-      const errorMessage = error instanceof Error ? error.message : "Eroare necunoscută";
-      alert(`Eroare la încărcarea proiectelor: ${errorMessage}\n\nVerifică:\n1. Dacă ai rulat SQL-ul în Supabase\n2. Dacă tabelul 'projects' există\n3. Conexiunea la internet`);
-    } finally {
-      setLoading(false);
+      console.error("Failed to load projects:", error);
     }
-  };
+  }
 
   const handleLogout = () => {
     logout();
     router.push("/admin/login");
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
     try {
       setUploadingImage(true);
-      const imageUrl = await projectService.uploadImage(file);
+      const imageUrl = await uploadImage(file);
       setFormData({ ...formData, imageUrl });
     } catch (error) {
       console.error("Error uploading image:", error);
@@ -92,10 +96,21 @@ export default function AdminDashboard() {
     try {
       setSubmitting(true);
       
+      const dbData = {
+        title: formData.title,
+        description: formData.description,
+        location: formData.location,
+        category: formData.category || "solar",
+        power: formData.power || null,
+        completed_date: formData.completedDate,
+        image_url: formData.imageUrl,
+        featured: formData.featured || false,
+      };
+      
       if (editingId) {
-        await projectService.updateProject(editingId, formData);
+        await updateProject(editingId, dbData);
       } else {
-        await projectService.createProject(formData as Omit<Project, "id">);
+        await createProject(dbData);
       }
       
       await loadProjects();
@@ -124,20 +139,16 @@ export default function AdminDashboard() {
     setShowForm(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Sigur vrei să ștergi acest proiect? Acțiunea este permanentă.")) {
-      return;
-    }
+  async function handleDeleteProject(id: string) {
+    if (!confirm("Sigur doriți să ștergeți acest proiect?")) return;
 
     try {
-      await projectService.deleteProject(id);
+      await deleteProject(id);
       await loadProjects();
-      alert("Proiect șters cu succes!");
     } catch (error) {
-      console.error("Error deleting project:", error);
-      alert("Eroare la ștergerea proiectului. Încearcă din nou.");
+      console.error("Failed to delete project:", error);
     }
-  };
+  }
 
   const resetForm = () => {
     setFormData({
@@ -461,7 +472,7 @@ export default function AdminDashboard() {
                         <Pencil className="w-4 h-4" />
                       </Button>
                       <Button
-                        onClick={() => handleDelete(project.id)}
+                        onClick={() => handleDeleteProject(project.id)}
                         variant="outline"
                         size="sm"
                         className="border-destructive/50 text-destructive hover:bg-destructive/10"

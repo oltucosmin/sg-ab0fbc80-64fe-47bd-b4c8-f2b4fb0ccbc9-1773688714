@@ -3,7 +3,7 @@ import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { ProjectCard } from "@/components/ProjectCard";
 import { SEO } from "@/components/SEO";
-import { projectService } from "@/services/projectService";
+import { getProjects } from "@/services/projectService";
 import type { Project } from "@/types/project";
 import { Button } from "@/components/ui/button";
 import { Filter, Loader2 } from "lucide-react";
@@ -20,8 +20,21 @@ export default function ProjectsPage() {
   const loadProjects = async () => {
     try {
       setLoading(true);
-      const data = await projectService.getAllProjects();
-      setProjects(data);
+      const data = await getProjects();
+      
+      const transformedProjects: Project[] = data.map((p) => ({
+        id: p.id,
+        title: p.title,
+        description: p.description,
+        imageUrl: p.image_url,
+        location: p.location,
+        power: p.power,
+        completedDate: p.completed_date,
+        category: p.category as "solar" | "heat-pump" | "hybrid",
+        isFeatured: p.featured,
+      }));
+      
+      setProjects(transformedProjects);
     } catch (error) {
       console.error("Error loading projects:", error);
     } finally {

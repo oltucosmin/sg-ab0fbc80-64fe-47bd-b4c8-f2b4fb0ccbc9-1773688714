@@ -80,7 +80,7 @@ export async function seedSiteSettings() {
 
   const { error } = await supabase
     .from("site_settings")
-    .upsert(settings, { onConflict: "key" });
+    .upsert(settings as any, { onConflict: "key" });
 
   if (error) {
     console.error("Error seeding site settings:", error);
@@ -157,7 +157,7 @@ export async function seedPageContent() {
 
   const { error } = await supabase
     .from("page_content")
-    .upsert(content, { onConflict: "page,section,key" });
+    .upsert(content as any, { onConflict: "page,section,key" });
 
   if (error) {
     console.error("Error seeding page content:", error);
@@ -229,7 +229,7 @@ export async function seedServices() {
 
   const { error } = await supabase
     .from("services")
-    .upsert(services, { onConflict: "title" });
+    .upsert(services as any, { onConflict: "title" });
 
   if (error) {
     console.error("Error seeding services:", error);

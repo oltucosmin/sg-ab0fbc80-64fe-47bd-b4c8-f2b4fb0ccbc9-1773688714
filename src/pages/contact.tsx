@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Mail, Phone, MapPin, Send, Loader2, CheckCircle } from "lucide-react";
 import Link from "next/link";
-import { contactService } from "@/services/contactService";
+import { submitContactForm } from "@/services/contactService";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -16,44 +16,45 @@ export default function ContactPage() {
     email: "",
     phone: "",
     message: "",
-    gdprConsent: false
+    gdprConsent: false,
   });
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = async (e: FormEvent) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    
-    if (!formData.gdprConsent) {
-      alert("Te rog acceptă politica de confidențialitate pentru a trimite mesajul.");
-      return;
-    }
+    setSubmitting(true);
+    setSubmitted(false);
 
     try {
-      setSubmitting(true);
-      await contactService.submitContact({
+      const result = await submitContactForm({
         name: formData.name,
         email: formData.email,
-        phone: formData.phone,
+        phone: formData.phone || null,
         message: formData.message,
-        gdprConsent: formData.gdprConsent
+        gdprConsent: formData.gdprConsent,
       });
-      
-      setSubmitted(true);
-      setFormData({
-        name: "",
-        email: "",
-        phone: "",
-        message: "",
-        gdprConsent: false
-      });
+
+      if (result.success) {
+        setFormData({
+          name: "",
+          email: "",
+          phone: "",
+          message: "",
+          gdprConsent: false,
+        });
+        setSubmitted(true);
+        setTimeout(() => setSubmitted(false), 5000);
+      } else {
+        throw new Error("Submission failed");
+      }
     } catch (error) {
       console.error("Error submitting form:", error);
-      alert("A apărut o eroare. Te rog încearcă din nou.");
+      alert("A apărut o eroare. Vă rugăm încercați din nou.");
     } finally {
       setSubmitting(false);
     }
-  };
+  }
 
   return (
     <>
@@ -209,22 +210,23 @@ export default function ContactPage() {
                   />
                 </div>
 
-                <div className="flex items-start space-x-2">
+                {/* GDPR Consent */}
+                <div className="flex items-start gap-3">
                   <input
                     type="checkbox"
-                    id="gdpr"
+                    id="gdprConsent"
                     checked={formData.gdprConsent}
                     onChange={(e) => setFormData({ ...formData, gdprConsent: e.target.checked })}
+                    className="mt-1 h-4 w-4 rounded border-cyan-500/30 bg-slate-900/50 text-cyan-500 focus:ring-2 focus:ring-cyan-500/50"
                     required
-                    className="w-4 h-4 mt-1 rounded border-white/10"
                   />
-                  <Label htmlFor="gdpr" className="text-sm text-muted-foreground cursor-pointer leading-relaxed">
-                    Sunt de acord cu prelucrarea datelor personale conform{" "}
-                    <Link href="/politica-confidentialitate" className="text-emerald-400 hover:underline">
-                      Politicii de Confidențialitate
-                    </Link>
-                    . *
-                  </Label>
+                  <label htmlFor="gdprConsent" className="text-sm text-slate-300">
+                    Sunt de acord cu{" "}
+                    <Link href="/politica-confidentialitate" className="text-cyan-400 hover:text-cyan-300 underline">
+                      politica de confidențialitate
+                    </Link>{" "}
+                    și procesarea datelor personale.*
+                  </label>
                 </div>
 
                 <Button
