@@ -37,7 +37,7 @@ export const userService = {
     return authData.users.map(user => ({
       id: user.id,
       email: user.email || "",
-      role: rolesMap.get(user.id) || 'admin', // Default to 'admin' if no role set
+      role: (rolesMap.get(user.id) as UserRole) || 'admin', // Default to 'admin' if no role set
       created_at: user.created_at,
       last_sign_in_at: user.last_sign_in_at || null,
       email_confirmed_at: user.email_confirmed_at || null
